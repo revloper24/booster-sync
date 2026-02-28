@@ -9,7 +9,7 @@ const ROVER_API_KEY = process.env.ROVER_API_KEY;
 async function getRobloxId(discordUserId) {
     try {
         const res = await fetch(
-            `https://api.rover.link/v2/guilds/${GUILD_ID}/discord-to-roblox/${discordUserId}`,
+            `https://api.rover.link/v2/user/${discordUserId}`,
             {
                 headers: {
                     "x-api-key": ROVER_API_KEY
@@ -23,6 +23,9 @@ async function getRobloxId(discordUserId) {
         }
 
         const data = await res.json();
+
+        console.log("RoVer response:", data); // debug muna
+
         return data.robloxId ?? null;
 
     } catch (err) {
