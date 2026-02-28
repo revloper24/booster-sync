@@ -7,24 +7,30 @@ dotenv.config();
 
 const ROVER_API_KEY = process.env.ROVER_API_KEY;
 async function getRobloxId(discordUserId) {
-    const res = await fetch(
-        `https://api.rover.link/v1/guilds/${GUILD_ID}/members/${discordUserId}`,
-        {
-            headers: {
-                Authorization: `Bearer ${ROVER_API_KEY}`
+    try {
+        const res = await fetch(
+            `https://api.rover.link/v2/guilds/${GUILD_ID}/discord-to-roblox/${discordUserId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${ROVER_API_KEY}`
+                }
             }
-        }
-    );
+        );
 
-    if (!res.ok) {
-        console.log("RoVer API error:", res.status);
+        if (!res.ok) {
+            console.log("RoVer API error:", res.status);
+            return null;
+        }
+
+        const data = await res.json();
+
+        return data.robloxId ?? null;
+
+    } catch (err) {
+        console.log("Fetch failed:", err.message);
         return null;
     }
-
-    const data = await res.json();
-    return data.robloxId;
 }
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
