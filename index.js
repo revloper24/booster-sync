@@ -7,7 +7,7 @@ const ROVER_API_KEY = process.env.ROVER_API_KEY;
 
 async function getRobloxId(discordUserId) {
     const res = await fetch(
-        `https://verify.rover.link/api/guilds/${GUILD_ID}/members/${discordUserId}`,
+        `https://api.rover.link/v1/guilds/${GUILD_ID}/members/${discordUserId}`,
         {
             headers: {
                 Authorization: `Bearer ${ROVER_API_KEY}`
