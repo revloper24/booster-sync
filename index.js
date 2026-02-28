@@ -12,7 +12,7 @@ async function getRobloxId(discordUserId) {
             `https://api.rover.link/v2/guilds/${GUILD_ID}/discord-to-roblox/${discordUserId}`,
             {
                 headers: {
-                    Authorization: `Bearer ${ROVER_API_KEY}`
+                    "x-api-key": ROVER_API_KEY
                 }
             }
         );
@@ -23,7 +23,6 @@ async function getRobloxId(discordUserId) {
         }
 
         const data = await res.json();
-
         return data.robloxId ?? null;
 
     } catch (err) {
