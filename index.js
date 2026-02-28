@@ -1,6 +1,28 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import express from "express";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
+
+const ROVER_API_KEY = process.env.ROVER_API_KEY;
+
+async function getRobloxId(discordUserId) {
+    const res = await fetch(
+        `https://verify.rover.link/api/guilds/${GUILD_ID}/members/${discordUserId}`,
+        {
+            headers: {
+                Authorization: `Bearer ${ROVER_API_KEY}`
+            }
+        }
+    );
+
+    if (!res.ok) {
+        console.log("RoVer API error:", res.status);
+        return null;
+    }
+
+    const data = await res.json();
+    return data.robloxId;
+}
 
 dotenv.config();
 
@@ -18,18 +40,25 @@ client.once("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on("guildMemberUpdate", (oldMember, newMember) => {
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
     if (newMember.guild.id !== GUILD_ID) return;
 
     const hadRole = oldMember.roles.cache.has(BOOSTER_ROLE_ID);
     const hasRole = newMember.roles.cache.has(BOOSTER_ROLE_ID);
 
-    if (!hadRole && hasRole) {
-        console.log(`${newMember.user.tag} just boosted!`);
+    if (hadRole === hasRole) return;
+
+    const robloxId = await getRobloxId(newMember.id);
+
+    if (!robloxId) {
+        console.log(`${newMember.user.tag} booster changed but no linked Roblox account.`);
+        return;
     }
 
-    if (hadRole && !hasRole) {
-        console.log(`${newMember.user.tag} removed boost.`);
+    if (hasRole) {
+        console.log(`${newMember.user.tag} boosted. Roblox ID: ${robloxId}`);
+    } else {
+        console.log(`${newMember.user.tag} removed boost. Roblox ID: ${robloxId}`);
     }
 });
 
