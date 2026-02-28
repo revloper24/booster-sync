@@ -5,34 +5,9 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
-const ROVER_API_KEY = process.env.ROVER_API_KEY;
-async function getRobloxId(discordUserId) {
-    try {
-        const res = await fetch(
-            `https://api.rover.link/v2/user/${discordUserId}`,
-            {
-                headers: {
-                    "x-api-key": ROVER_API_KEY
-                }
-            }
-        );
+const GUILD_ID = process.env.GUILD_ID;
+const BOOSTER_ROLE_ID = process.env.BOOSTER_ROLE_ID;
 
-        if (!res.ok) {
-            console.log("RoVer API error:", res.status);
-            return null;
-        }
-
-        const data = await res.json();
-
-        console.log("RoVer response:", data); // debug muna
-
-        return data.robloxId ?? null;
-
-    } catch (err) {
-        console.log("Fetch failed:", err.message);
-        return null;
-    }
-}
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -40,12 +15,33 @@ const client = new Client({
     ]
 });
 
-const GUILD_ID = process.env.GUILD_ID;
-const BOOSTER_ROLE_ID = process.env.BOOSTER_ROLE_ID;
-
-client.once("ready", () => {
+client.once("clientReady", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
+
+// Convert Roblox username → UserId
+async function getUserIdFromUsername(username) {
+    try {
+        const res = await fetch("https://users.roblox.com/v1/usernames/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                usernames: [username],
+                excludeBannedUsers: true
+            })
+        });
+
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) return null;
+
+        return data.data[0].id;
+
+    } catch (err) {
+        console.log("Roblox API error:", err.message);
+        return null;
+    }
+}
 
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     if (newMember.guild.id !== GUILD_ID) return;
@@ -55,18 +51,34 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 
     if (hadRole === hasRole) return;
 
-    const robloxId = await getRobloxId(newMember.id);
-
-    if (!robloxId) {
-        console.log(`${newMember.user.tag} booster changed but no linked Roblox account.`);
+    if (!hasRole) {
+        console.log(`${newMember.user.tag} removed boost.`);
         return;
     }
 
-    if (hasRole) {
-        console.log(`${newMember.user.tag} boosted. Roblox ID: ${robloxId}`);
-    } else {
-        console.log(`${newMember.user.tag} removed boost. Roblox ID: ${robloxId}`);
+    const nickname = newMember.nickname || newMember.user.username;
+
+    // Extract username inside parentheses
+    const match = nickname.match(/\(([^)]+)\)/);
+
+    if (!match) {
+        console.log(`${newMember.user.tag} boosted but no (username) format in nickname.`);
+        return;
     }
+
+    const robloxUsername = match[1];
+    console.log("Extracted Roblox username:", robloxUsername);
+
+    const userId = await getUserIdFromUsername(robloxUsername);
+
+    if (!userId) {
+        console.log("Failed to convert username to UserId.");
+        return;
+    }
+
+    console.log(`${newMember.user.tag} boosted. Roblox UserId: ${userId}`);
+
+    // 🔥 NEXT STEP: Send to Roblox server
 });
 
 client.login(process.env.DISCORD_TOKEN);
