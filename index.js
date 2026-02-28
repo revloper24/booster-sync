@@ -3,8 +3,9 @@ import express from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-const ROVER_API_KEY = process.env.ROVER_API_KEY;
+dotenv.config();
 
+const ROVER_API_KEY = process.env.ROVER_API_KEY;
 async function getRobloxId(discordUserId) {
     const res = await fetch(
         `https://api.rover.link/v1/guilds/${GUILD_ID}/members/${discordUserId}`,
@@ -23,8 +24,6 @@ async function getRobloxId(discordUserId) {
     const data = await res.json();
     return data.robloxId;
 }
-
-dotenv.config();
 
 const client = new Client({
     intents: [
